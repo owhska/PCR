@@ -1,0 +1,101 @@
+/* src/Login.css */
+.Login {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #f472b6, #ef426f); /* Gradient background with pink tones */
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  padding: 1rem;
+}
+
+.Login .login-container {
+  background: #ffffff;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 2rem;
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+
+.Login .login-container h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1f2937; /* Dark gray for text */
+  margin-bottom: 1.5rem;
+}
+
+.Login .login-container input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid #d1d5db; /* Light gray border */
+  border-radius: 0.375rem;
+  font-size: 1rem;
+  color: #1f2937;
+  background: #f9fafb; /* Subtle background for inputs */
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.Login .login-container input:focus {
+  outline: none;
+  border-color: #3b82f6; /* Blue focus */
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+.Login .login-container input::placeholder {
+  color: #9ca3af; /* Gray placeholder */
+}
+
+.Login .login-container button {
+  width: 100%;
+  padding: 0.75rem;
+  background: #3b82f6; /* Blue button */
+  color: #ffffff;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.Login .login-container button:hover {
+  background: #2563eb; /* Darker blue on hover */
+}
+
+.Login .login-container button:disabled {
+  background: #d1d5db; /* Gray for disabled */
+  cursor: not-allowed;
+}
+
+.Login .login-container p {
+  font-size: 0.875rem;
+  color: #4b5563; /* Medium gray */
+  margin-top: 1rem;
+}
+
+.Login .login-container p a {
+  color: #3b82f6; /* Blue link */
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.Login .login-container p a:hover {
+  text-decoration: underline;
+  color: #2563eb; /* Darker blue on hover */
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .Login .login-container {
+    padding: 1.5rem;
+    max-width: 90%;
+  }
+
+  .Login .login-container h2 {
+    font-size: 1.5rem;
+  }
+}

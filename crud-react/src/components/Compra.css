@@ -1,0 +1,168 @@
+.compra-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.logo-img {
+  max-width: 150px;
+}
+
+.filters {
+  margin: 20px 0;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.filters input {
+  padding: 8px;
+  font-size: 16px;
+  flex-grow: 1;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.logout-btn {
+  padding: 8px 16px;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.logout-btn:hover {
+  background-color: #c82333;
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.product-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.product-img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.product-info {
+  padding: 15px;
+}
+
+.product-info h5 {
+  margin: 0 0 10px;
+  font-size: 18px;
+}
+
+.product-info p {
+  margin: 5px 0;
+}
+
+.buy-btn {
+  padding: 8px 16px;
+  background-color: #fc8eac;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.buy-btn:hover {
+  background-color: #e35b89;
+}
+
+.cart-float {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: #28a745;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cart-count {
+  background-color: #fff;
+  color: #28a745;
+  border-radius: 50%;
+  padding: 2px 8px;
+  font-size: 14px;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 500px;
+  width: 90%;
+}
+
+.modal-content h3 {
+  margin-top: 0;
+}
+
+.modal-content input {
+  width: 100%;
+  padding: 8px;
+  margin: 10px 0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.modal-btn {
+  padding: 8px 16px;
+  margin: 5px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.modal-btn:first-of-type {
+  background-color: #28a745;
+  color: white;
+}
+
+.modal-btn:first-of-type:hover {
+  background-color: #218838;
+}
+
+.modal-btn:last-of-type {
+  background-color: #6c757d;
+  color: white;
+}
+
+.modal-btn:last-of-type:hover {
+  background-color: #5a6268;
+}
