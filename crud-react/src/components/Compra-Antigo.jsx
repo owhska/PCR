@@ -1,14 +1,15 @@
 import { useEffect, useState, useCallback } from 'react';
-import axios from 'axios';
+import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, deleteDoc, increment } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import './Compra.css';
 
 const Compra = () => {
+  const db = getFirestore();
   const auth = getAuth();
   const navigate = useNavigate();
 
-  const [products, setProducts] = useState([]);
+  const [products, setProdutos] = useState([]);
   const [cart, setCart] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [purchaseQuantity, setPurchaseQuantity] = useState(1);
@@ -17,45 +18,31 @@ const Compra = () => {
   const [showCartModal, setShowCartModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
-  const api = axios.create({
-    baseURL: 'http://localhost:3000',
-  });
-
-  const loadProducts = useCallback(async () => {
-    try {
-      const response = await api.get('/produtos');
-      setProducts(response.data);
-    } catch (error) {
-      console.error('Erro ao carregar produtos:', error);
-      alert('Erro ao carregar produtos. Verifique o servidor.');
-    }
-  }, []);
-
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, (user) => {
       if (!user) navigate('/');
     });
     loadProducts();
-    return () => unsubscribe();
-  }, [auth, navigate, loadProducts]);
+  }, [auth, navigate]);
+
+  const loadProducts = useCallback(async () => {
+    const snapshot = await getDocs(collection(db, 'produtos'));
+    const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    setProdutos(list);
+  }, [db]);
 
   const handleSearch = (e) => setSearch(e.target.value.toLowerCase());
 
   const showPurchaseModal = async (id) => {
-    try {
-      const response = await api.get(`/produtos/${id}`);
-      if (response.data && response.data.erro) {
-        throw new Error(response.data.erro);
-      }
-      setSelectedProduct(response.data);
+    const docRef = doc(db, 'produtos', id);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      setSelectedProduct({ id: docSnap.id, ...docSnap.data() });
       setShowCompraModal(true);
-    } catch (error) {
-      console.error('Erro ao carregar produto:', error);
-      alert(`Erro ao carregar produto: ${error.message}`);
     }
   };
 
-  const addToCart = () => {
+  const addToCart = async () => {
     const quantity = parseInt(purchaseQuantity);
     if (!selectedProduct || isNaN(quantity) || quantity < 1) return;
 
@@ -70,48 +57,24 @@ const Compra = () => {
   };
 
   const viewCart = () => setShowCartModal(true);
-
   const openPayment = () => {
     setShowCartModal(false);
     setShowPaymentModal(true);
   };
-
   const finalizePayment = async () => {
-    try {
-      for (const item of cart) {
-        const currentProductResponse = await api.get(`/produtos/${item.id}`);
-        const currentProduct = currentProductResponse.data;
+    for (const item of cart) {
+      const ref = doc(db, 'produtos', item.id);
+      await updateDoc(ref, { quantidade: increment(-item.quantity) });
 
-        if (!currentProduct) {
-          throw new Error(`Produto ${item.id} não encontrado`);
-        }
-
-        const newQuantity = currentProduct.quantidade - item.quantity;
-        if (newQuantity < 0) {
-          throw new Error(`Estoque insuficiente para ${item.nome}`);
-        }
-
-        await api.put(`/produtos/${item.id}`, {
-          nome: currentProduct.nome,
-          tipo: currentProduct.tipo,
-          preco: currentProduct.preco,
-          quantidade: newQuantity,
-          situacao: currentProduct.situacao || "Disponível",
-        });
-
-        if (newQuantity <= 0) {
-          await api.delete(`/produtos/${item.id}`);
-        }
+      const docSnap = await getDoc(ref);
+      if (docSnap.exists() && docSnap.data().quantidade <= 0) {
+        await deleteDoc(ref);
       }
-
-      alert('Pagamento realizado!');
-      setCart([]);
-      setShowPaymentModal(false);
-      loadProducts();
-    } catch (error) {
-      console.error('Erro ao finalizar pagamento:', error);
-      alert(`Erro ao finalizar pagamento: ${error.message}`);
     }
+    alert('Pagamento realizado!');
+    setCart([]);
+    setShowPaymentModal(false);
+    loadProducts();
   };
 
   const logout = () => {
@@ -132,7 +95,6 @@ const Compra = () => {
           placeholder="Pesquisar..."
           value={search}
           onChange={handleSearch}
-          className="search-input"
         />
         <button className="logout-btn" onClick={logout}>Logout</button>
       </div>
@@ -145,7 +107,7 @@ const Compra = () => {
               <img src="https://sqquimica.com/wp-content/uploads/2023/07/Tendencias-em-espessantes-para-cosmeticos.png" className="product-img" alt={p.nome} />
               <div className="product-info">
                 <h5>{p.nome}</h5>
-                <p>Preço: R$ {p.preco.toFixed(2)}</p>
+                <p>Preço: R$ {p.preco}</p>
                 <p>Estoque: {p.quantidade}</p>
                 <button className="buy-btn" onClick={() => showPurchaseModal(p.id)}>Comprar</button>
               </div>
@@ -162,14 +124,13 @@ const Compra = () => {
         <div className="modal">
           <div className="modal-content">
             <h3>Comprar {selectedProduct.nome}</h3>
-            <p>Preço: R$ {selectedProduct.preco.toFixed(2)}</p>
+            <p>Preço: R$ {selectedProduct.preco}</p>
             <p>Estoque disponível: {selectedProduct.quantidade}</p>
             <input
               type="number"
               min="1"
               value={purchaseQuantity}
-              onChange={(e) => setPurchaseQuantity(parseInt(e.target.value) || 1)}
-              className="quantity-input"
+              onChange={(e) => setPurchaseQuantity(e.target.value)}
             />
             <button className="modal-btn" onClick={addToCart}>Adicionar ao Carrinho</button>
             <button className="modal-btn" onClick={() => setShowCompraModal(false)}>Fechar</button>
@@ -187,7 +148,7 @@ const Compra = () => {
               <>
                 {cart.map((item, index) => (
                   <div key={index}>
-                    <p>{item.nome} - {item.quantity} x R$ {item.preco.toFixed(2)}</p>
+                    <p>{item.nome} - {item.quantity} x R$ {item.preco}</p>
                   </div>
                 ))}
                 <button className="modal-btn" onClick={openPayment}>Ir para Pagamento</button>
@@ -204,7 +165,7 @@ const Compra = () => {
             <h3>Pagamento</h3>
             <p>Resumo do pedido:</p>
             {cart.map((item, index) => (
-              <p key={index}>{item.nome} - {item.quantity} x R$ {item.preco.toFixed(2)}</p>
+              <p key={index}>{item.nome} - {item.quantity} x R$ {item.preco}</p>
             ))}
             <button className="modal-btn" onClick={finalizePayment}>Finalizar Pagamento</button>
             <button className="modal-btn" onClick={() => setShowPaymentModal(false)}>Fechar</button>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import { auth } from './firebaseConfig';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { db, auth } from './firebaseConfig';
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc } from 'firebase/firestore';
+import { onAuthStateChanged, signOut, createUserWithEmailAndPassword } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './Home.css';
@@ -27,11 +27,6 @@ const Home = () => {
   const [adminConfirmSenha, setAdminConfirmSenha] = useState('');
   const [adminError, setAdminError] = useState('');
 
-  // Configurar API base URL (ajuste conforme sua porta ou deploy)
-  const api = axios.create({
-    baseURL: 'http://localhost:3000', // Ou a URL do Firebase Functions após deploy
-  });
-
   useEffect(() => {
     onAuthStateChanged(auth, (user) => {
       if (!user) navigate('/');
@@ -40,13 +35,9 @@ const Home = () => {
   }, [navigate]);
 
   const carregarProdutos = async () => {
-    try {
-      const response = await api.get('/produtos');
-      setProdutos(response.data);
-    } catch (error) {
-      console.error('Erro ao carregar produtos:', error);
-      alert('Erro ao carregar produtos. Verifique o servidor.');
-    }
+    const snapshot = await getDocs(collection(db, 'produtos'));
+    const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    setProdutos(lista);
   };
 
   const limparFormulario = () => {
@@ -73,19 +64,23 @@ const Home = () => {
     }
 
     try {
-      const produtoData = {
-        nome,
-        preco: parseFloat(preco),
-        quantidade: parseInt(quantidade),
-        situacao,
-        tipo,
-        usuario: auth.currentUser?.email || 'user@example.com', // Ajuste conforme necessário
-      };
-
       if (editandoId) {
-        await api.put(`/produtos/${editandoId}`, produtoData);
+        const ref = doc(db, 'produtos', editandoId);
+        await updateDoc(ref, {
+          nome,
+          preco: parseFloat(preco),
+          quantidade: parseInt(quantidade),
+          situacao,
+          tipo
+        });
       } else {
-        await api.post('/produtos', produtoData);
+        await addDoc(collection(db, 'produtos'), {
+          nome,
+          preco: parseFloat(preco),
+          quantidade: parseInt(quantidade),
+          situacao,
+          tipo
+        });
       }
       limparFormulario();
       carregarProdutos();
@@ -114,8 +109,16 @@ const Home = () => {
     }
 
     try {
-      // Aqui você pode integrar com a API ou manter o Firebase Auth
-      console.log('Cadastrando admin:', adminEmail); // Placeholder
+      const userCredential = await createUserWithEmailAndPassword(auth, adminEmail, adminSenha);
+      const user = userCredential.user;
+
+      await setDoc(doc(db, 'usuarios', user.uid), {
+        email: adminEmail,
+        senha: adminSenha,
+        cargo: 'adm',
+        createdAt: new Date().toISOString()
+      });
+
       limparAdminFormulario();
       setShowAdminModal(false);
       alert('Administrador cadastrado com sucesso!');
@@ -138,7 +141,7 @@ const Home = () => {
   const excluirProduto = async (id) => {
     if (window.confirm('Deseja realmente excluir este produto?')) {
       try {
-        await api.delete(`/produtos/${id}`);
+        await deleteDoc(doc(db, 'produtos', id));
         carregarProdutos();
       } catch (error) {
         console.error('Erro ao excluir produto:', error);
@@ -175,17 +178,15 @@ const Home = () => {
   };
 
   return (
-    <div className="container home-container" style={{ backgroundColor: '#F5DADF' }}>
+    <div className="container" style={{ backgroundColor: '#F5DADF' }}>
       <div className="text-center mb-4">
-        <img src="/imgs/Botifalho.png" alt="Logo Botifalho" className="logo-img" />
+        <img src="/imgs/Botifalho.png" alt="Logo Botifalho" style={{ maxWidth: '100px', height: 'auto' }} />
       </div>
 
-      <div className="d-flex justify-content-end mb-3">
-        <button className="btn btn-danger me-2" onClick={logout}>Logout</button>
-        <button className="btn btn-success" onClick={() => { limparAdminFormulario(); setShowAdminModal(true); }}>
-          Cadastrar Admin
-        </button>
-      </div>
+      <button className="btn btn-danger mb-3" onClick={logout}>Logout</button>
+      <button className="btn btn-success mb-3 ms-2" onClick={() => { limparAdminFormulario(); setShowAdminModal(true); }}>
+        Cadastrar Admin
+      </button>
 
       <div className="row">
         <div className="col-12">
@@ -280,7 +281,7 @@ const Home = () => {
             <div className="modal-header">
               <h5 className="modal-title">{editandoId ? 'Editar Produto' : 'Adicionar Produto'}</h5>
               <button type="button" className="close" onClick={() => { setShowModal(false); limparFormulario(); }}>
-                <span aria-hidden="true">&times;</span>
+                <span aria-hidden="true">×</span>
               </button>
             </div>
             <div className="modal-body">
@@ -353,7 +354,7 @@ const Home = () => {
             <div className="modal-header">
               <h5 className="modal-title">Cadastrar Administrador</h5>
               <button type="button" className="close" onClick={() => { setShowAdminModal(false); limparAdminFormulario(); }}>
-                <span aria-hidden="true">&times;</span>
+                <span aria-hidden="true">×</span>
               </button>
             </div>
             <div className="modal-body">
