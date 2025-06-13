@@ -47,7 +47,9 @@ const Compra = () => {
       if (response.data && response.data.erro) {
         throw new Error(response.data.erro);
       }
+      console.log('Produto selecionado:', response.data);
       setSelectedProduct(response.data);
+      setPurchaseQuantity(1);
       setShowCompraModal(true);
     } catch (error) {
       console.error('Erro ao carregar produto:', error);
@@ -57,16 +59,24 @@ const Compra = () => {
 
   const addToCart = () => {
     const quantity = parseInt(purchaseQuantity);
-    if (!selectedProduct || isNaN(quantity) || quantity < 1) return;
+    console.log('Adicionando ao carrinho:', { quantity, available: selectedProduct?.quantidade });
+    if (!selectedProduct || isNaN(quantity) || quantity < 1) {
+      alert('Quantidade inválida. Por favor, insira um número maior ou igual a 1.');
+      return;
+    }
 
     if (quantity > selectedProduct.quantidade) {
-      alert('Estoque insuficiente.');
+      alert('Estoque insuficiente. Escolha uma quantidade menor ou igual ao estoque disponível.');
       return;
     }
 
     setCart([...cart, { ...selectedProduct, quantity }]);
     setShowCompraModal(false);
     setPurchaseQuantity(1);
+  };
+
+  const clearCart = () => {
+    setCart([]);
   };
 
   const viewCart = () => setShowCartModal(true);
@@ -81,6 +91,7 @@ const Compra = () => {
       for (const item of cart) {
         const currentProductResponse = await api.get(`/produtos/${item.id}`);
         const currentProduct = currentProductResponse.data;
+        console.log('Produto atual:', currentProduct);
 
         if (!currentProduct) {
           throw new Error(`Produto ${item.id} não encontrado`);
@@ -91,17 +102,17 @@ const Compra = () => {
           throw new Error(`Estoque insuficiente para ${item.nome}`);
         }
 
-        await api.put(`/produtos/${item.id}`, {
+        const updatedProduct = {
           nome: currentProduct.nome,
           tipo: currentProduct.tipo,
           preco: currentProduct.preco,
           quantidade: newQuantity,
-          situacao: currentProduct.situacao || "Disponível",
-        });
+          situacao: newQuantity <= 0 ? 'Desabilitado' : currentProduct.situacao || 'Disponível',
+        };
 
-        if (newQuantity <= 0) {
-          await api.delete(`/produtos/${item.id}`);
-        }
+        console.log(`Atualizando produto ${item.id}:`, updatedProduct);
+        await api.put(`/produtos/${item.id}`, updatedProduct);
+        console.log(`Produto ${item.id} atualizado com sucesso.`);
       }
 
       alert('Pagamento realizado!');
@@ -167,8 +178,12 @@ const Compra = () => {
             <input
               type="number"
               min="1"
+              max={selectedProduct.quantidade}
               value={purchaseQuantity}
-              onChange={(e) => setPurchaseQuantity(parseInt(e.target.value) || 1)}
+              onChange={(e) => {
+                const value = e.target.value;
+                setPurchaseQuantity(value === '' ? '' : parseInt(value) || 1);
+              }}
               className="quantity-input"
             />
             <button className="modal-btn" onClick={addToCart}>Adicionar ao Carrinho</button>
@@ -191,6 +206,7 @@ const Compra = () => {
                   </div>
                 ))}
                 <button className="modal-btn" onClick={openPayment}>Ir para Pagamento</button>
+                <button className="modal-btn" onClick={clearCart}>Limpar Carrinho</button>
               </>
             )}
             <button className="modal-btn" onClick={() => setShowCartModal(false)}>Fechar</button>

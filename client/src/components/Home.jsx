@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { db, auth } from './firebaseConfig';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc } from 'firebase/firestore';
+import React, { useEffect, useState, useCallback } from 'react';
+import axios from 'axios';
+import { auth, db } from './firebaseConfig';
+import { doc, setDoc } from 'firebase/firestore';
 import { onAuthStateChanged, signOut, createUserWithEmailAndPassword } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -30,22 +31,31 @@ const Home = () => {
   const [adminConfirmSenha, setAdminConfirmSenha] = useState('');
   const [adminError, setAdminError] = useState('');
 
+  const api = axios.create({
+    baseURL: 'http://localhost:3000',
+  });
+
+  const carregarProdutos = useCallback(async () => {
+    try {
+      const response = await api.get('/produtos');
+      setProdutos(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar produtos:', error);
+      alert('Erro ao carregar produtos. Verifique o servidor.');
+    }
+  }, []);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (!user) {
+      if (user) {
+        carregarProdutos();
+      } else {
         navigate('/');
       }
     });
 
-    carregarProdutos();
     return () => unsubscribe();
-  }, [navigate]);
-
-  const carregarProdutos = async () => {
-    const snapshot = await getDocs(collection(db, 'produtos'));
-    const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    setProdutos(lista);
-  };
+  }, [navigate, carregarProdutos]);
 
   const limparFormulario = () => {
     setNome('');
@@ -67,35 +77,57 @@ const Home = () => {
     e.preventDefault();
 
     if (!nome || !preco || !quantidade || !tipo) {
-      alert('Preencha todos os campos!');
+      alert('Preencha todos os campos obrigatórios (Nome, Preço, Quantidade, Tipo)!');
+      return;
+    }
+
+    const parsedPreco = parseFloat(preco);
+    const parsedQuantidade = parseInt(quantidade);
+
+    if (isNaN(parsedPreco) || parsedPreco <= 0) {
+      alert('Preço deve ser um número positivo.');
+      return;
+    }
+
+    if (isNaN(parsedQuantidade) || parsedQuantidade < 0) {
+      alert('Quantidade deve ser um número não-negativo.');
       return;
     }
 
     try {
+      const user = auth.currentUser;
+      if (!user) {
+        alert('Usuário não autenticado. Faça login novamente.');
+        navigate('/');
+        return;
+      }
+
+      const produtoData = {
+        nome,
+        preco: parsedPreco,
+        quantidade: parsedQuantidade,
+        situacao,
+        tipo,
+        usuario: user.email, // Inclui o email do usuário autenticado
+      };
+
+      console.log('Enviando produto:', produtoData);
+
       if (editandoId) {
-        const produtoRef = doc(db, 'produtos', editandoId);
-        await updateDoc(produtoRef, {
-          nome,
-          preco: parseFloat(preco),
-          quantidade: parseInt(quantidade),
-          situacao,
-          tipo
-        });
+        await api.put(`/produtos/${editandoId}`, produtoData);
+        alert('Produto atualizado com sucesso!');
       } else {
-        await addDoc(collection(db, 'produtos'), {
-          nome,
-          preco: parseFloat(preco),
-          quantidade: parseInt(quantidade),
-          situacao,
-          tipo
-        });
+        await api.post('/produtos', produtoData);
+        alert('Produto cadastrado com sucesso!');
       }
 
       limparFormulario();
       carregarProdutos();
       setShowModal(false);
     } catch (error) {
-      alert('Erro ao salvar produto: ' + error.message);
+      console.error('Erro ao salvar produto:', error);
+      const errorMessage = error.response?.data?.erro || error.message;
+      alert(`Erro ao salvar produto: ${errorMessage}`);
     }
   };
 
@@ -124,9 +156,9 @@ const Home = () => {
 
       await setDoc(doc(db, 'usuarios', user.uid), {
         email: adminEmail,
-        senha: adminSenha,
+        senha: adminSenha, // Nota: Armazenar senhas em texto puro não é recomendado
         cargo: 'adm',
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       });
 
       limparAdminFormulario();
@@ -137,23 +169,32 @@ const Home = () => {
     }
   };
 
-  const editarProduto = (produto) => {
-    setNome(produto.nome);
-    setPreco(produto.preco);
-    setQuantidade(produto.quantidade);
-    setSituacao(produto.situacao);
-    setTipo(produto.tipo);
-    setEditandoId(produto.id);
-    setShowModal(true);
+  const editarProduto = async (id) => {
+    try {
+      const response = await api.get(`/produtos/${id}`);
+      const produto = response.data;
+      setNome(produto.nome);
+      setPreco(produto.preco.toString());
+      setQuantidade(produto.quantidade.toString());
+      setSituacao(produto.situacao);
+      setTipo(produto.tipo);
+      setEditandoId(id);
+      setShowModal(true);
+    } catch (error) {
+      console.error('Erro ao carregar produto:', error);
+      alert(`Erro ao carregar produto: ${error.message}`);
+    }
   };
 
   const excluirProduto = async (id) => {
     if (window.confirm('Deseja realmente excluir este produto?')) {
       try {
-        await deleteDoc(doc(db, 'produtos', id));
+        await api.delete(`/produtos/${id}`);
         carregarProdutos();
+        alert('Produto excluído com sucesso!');
       } catch (error) {
-        alert('Erro ao excluir produto: ' + error.message);
+        console.error('Erro ao excluir produto:', error);
+        alert(`Erro ao excluir produto: ${error.message}`);
       }
     }
   };
@@ -180,8 +221,16 @@ const Home = () => {
       </div>
 
       <div className="mb-3">
-        <button className="btn btn-danger me-2" onClick={logout}>Logout</button>
-        <button className="btn btn-success" onClick={() => { limparAdminFormulario(); setShowAdminModal(true); }}>
+        <button className="btn btn-danger me-2" onClick={logout}>
+          Logout
+        </button>
+        <button
+          className="btn btn-success"
+          onClick={() => {
+            limparAdminFormulario();
+            setShowAdminModal(true);
+          }}
+        >
           Cadastrar Admin
         </button>
       </div>
@@ -232,7 +281,13 @@ const Home = () => {
         </div>
       </div>
 
-      <button className="btn btn-primary mb-3" onClick={() => { limparFormulario(); setShowModal(true); }}>
+      <button
+        className="btn btn-primary mb-3"
+        onClick={() => {
+          limparFormulario();
+          setShowModal(true);
+        }}
+      >
         Adicionar Produto
       </button>
 
@@ -248,7 +303,7 @@ const Home = () => {
           </tr>
         </thead>
         <tbody>
-          {filteredProdutos.map(prod => (
+          {filteredProdutos.map((prod) => (
             <tr key={prod.id}>
               <td>{prod.nome}</td>
               <td>{prod.preco.toFixed(2)}</td>
@@ -256,8 +311,12 @@ const Home = () => {
               <td>{prod.situacao}</td>
               <td>{prod.tipo}</td>
               <td>
-                <button className="btn btn-warning btn-sm me-2" onClick={() => editarProduto(prod)}>Editar</button>
-                <button className="btn btn-danger btn-sm" onClick={() => excluirProduto(prod.id)}>Excluir</button>
+                <button className="btn btn-warning btn-sm me-2" onClick={() => editarProduto(prod.id)}>
+                  Editar
+                </button>
+                <button className="btn btn-danger btn-sm" onClick={() => excluirProduto(prod.id)}>
+                  Excluir
+                </button>
               </td>
             </tr>
           ))}
@@ -270,16 +329,49 @@ const Home = () => {
           <div className="modal-content">
             <h5>{editandoId ? 'Editar Produto' : 'Adicionar Produto'}</h5>
             <form onSubmit={salvarProduto}>
-              <input className="form-control mb-2" value={nome} onChange={e => setNome(e.target.value)} placeholder="Nome" />
-              <input className="form-control mb-2" type="number" value={preco} onChange={e => setPreco(e.target.value)} placeholder="Preço" />
-              <input className="form-control mb-2" type="number" value={quantidade} onChange={e => setQuantidade(e.target.value)} placeholder="Quantidade" />
-              <select className="form-control mb-2" value={situacao} onChange={e => setSituacao(e.target.value)}>
+              <input
+                className="form-control mb-2"
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                placeholder="Nome"
+              />
+              <input
+                className="form-control mb-2"
+                type="number"
+                step="0.01"
+                min="0.01"
+                value={preco}
+                onChange={(e) => setPreco(e.target.value)}
+                placeholder="Preço"
+              />
+              <input
+                className="form-control mb-2"
+                type="number"
+                min="0"
+                value={quantidade}
+                onChange={(e) => setQuantidade(e.target.value)}
+                placeholder="Quantidade"
+              />
+              <select
+                className="form-control mb-2"
+                value={situacao}
+                onChange={(e) => setSituacao(e.target.value)}
+              >
                 <option value="Habilitado">Habilitado</option>
                 <option value="Desabilitado">Desabilitado</option>
               </select>
-              <input className="form-control mb-2" value={tipo} onChange={e => setTipo(e.target.value)} placeholder="Tipo" />
-              <button className="btn btn-primary me-2" type="submit">{editandoId ? 'Atualizar' : 'Salvar'}</button>
-              <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancelar</button>
+              <input
+                className="form-control mb-2"
+                value={tipo}
+                onChange={(e) => setTipo(e.target.value)}
+                placeholder="Tipo"
+              />
+              <button className="btn btn-primary me-2" type="submit">
+                {editandoId ? 'Atualizar' : 'Salvar'}
+              </button>
+              <button className="btn btn-secondary" type="button" onClick={() => setShowModal(false)}>
+                Cancelar
+              </button>
             </form>
           </div>
         </div>
@@ -287,16 +379,41 @@ const Home = () => {
 
       {/* Modal Admin */}
       {showAdminModal && (
-        <div className="modal-overlay" onClick={(e) => e.target.className.includes('modal-overlay') && setShowAdminModal(false)}>
+        <div
+          className="modal-overlay"
+          onClick={(e) => e.target.className.includes('modal-overlay') && setShowAdminModal(false)}
+        >
           <div className="modal-content">
             <h5>Cadastrar Administrador</h5>
             <form onSubmit={cadastrarAdmin}>
               {adminError && <div className="alert alert-danger">{adminError}</div>}
-              <input className="form-control mb-2" type="email" placeholder="Email" value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} />
-              <input className="form-control mb-2" type="password" placeholder="Senha" value={adminSenha} onChange={(e) => setAdminSenha(e.target.value)} />
-              <input className="form-control mb-2" type="password" placeholder="Confirmar Senha" value={adminConfirmSenha} onChange={(e) => setAdminConfirmSenha(e.target.value)} />
-              <button className="btn btn-primary me-2" type="submit">Cadastrar</button>
-              <button className="btn btn-secondary" type="button" onClick={() => setShowAdminModal(false)}>Cancelar</button>
+              <input
+                className="form-control mb-2"
+                type="email"
+                placeholder="Email"
+                value={adminEmail}
+                onChange={(e) => setAdminEmail(e.target.value)}
+              />
+              <input
+                className="form-control mb-2"
+                type="password"
+                placeholder="Senha"
+                value={adminSenha}
+                onChange={(e) => setAdminSenha(e.target.value)}
+              />
+              <input
+                className="form-control mb-2"
+                type="password"
+                placeholder="Confirmar Senha"
+                value={adminConfirmSenha}
+                onChange={(e) => setAdminConfirmSenha(e.target.value)}
+              />
+              <button className="btn btn-primary me-2" type="submit">
+                Cadastrar
+              </button>
+              <button className="btn btn-secondary" type="button" onClick={() => setShowAdminModal(false)}>
+                Cancelar
+              </button>
             </form>
           </div>
         </div>
