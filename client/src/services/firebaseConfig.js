@@ -3,13 +3,12 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDxQIyg1GyAIBNlNRFIyk0OyPC2LNVkSik",
-  authDomain: "projetotop-6f6a9.firebaseapp.com",
-  projectId: "projetotop-6f6a9",
-  storageBucket: "projetotop-6f6a9.firebasestorage.app",
-  messagingSenderId: "556215499599",
-  appId: "1:556215499599:web:e38e4a352c9af6fdb4633a",
-  measurementId: "G-FNW6R2QHEY"
+  apiKey: "AIzaSyBpzaKTCZdT-f-iOkXBPi5sU-yERXllsfs",
+  authDomain: "crud-pcr.firebaseapp.com",
+  projectId: "crud-pcr",
+  storageBucket: "crud-pcr.firebasestorage.app",
+  messagingSenderId: "383068518120",
+  appId: "1:383068518120:web:7ec4c5530230f689bafb5d"
 };
 
 const app = initializeApp(firebaseConfig);
