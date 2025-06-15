@@ -166,3 +166,43 @@
 .modal-btn:last-of-type:hover {
   background-color: #5a6268;
 }
+
+.payment-method {
+  margin: 15px 0;
+}
+
+.payment-select {
+  width: 100%;
+  padding: 8px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.card-details {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.card-input {
+  padding: 8px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.pix-details {
+  margin: 15px 0;
+  text-align: center;
+}
+
+.qr-code {
+  background-color: #f0f0f0;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 16px;
+}

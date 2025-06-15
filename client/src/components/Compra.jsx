@@ -16,6 +16,11 @@ const Compra = () => {
   const [showCompraModal, setShowCompraModal] = useState(false);
   const [showCartModal, setShowCartModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('credit');
+  const [cardNumber, setCardNumber] = useState('');
+  const [cardName, setCardName] = useState('');
+  const [cardExpiry, setCardExpiry] = useState('');
+  const [cardCVC, setCardCVC] = useState('');
 
   const api = axios.create({
     baseURL: 'http://localhost:3000',
@@ -88,6 +93,26 @@ const Compra = () => {
 
   const finalizePayment = async () => {
     try {
+      // Validate payment method
+      if (paymentMethod === 'credit' || paymentMethod === 'debit') {
+        if (!cardNumber || cardNumber.length < 16) {
+          throw new Error('Número do cartão inválido. Deve conter pelo menos 16 dígitos.');
+        }
+        if (!cardName || cardName.trim() === '') {
+          throw new Error('Nome no cartão é obrigatório.');
+        }
+        if (!cardExpiry || !/^\d{2}\/\d{2}$/.test(cardExpiry)) {
+          throw new Error('Data de validade inválida. Use o formato MM/AA.');
+        }
+        if (!cardCVC || cardCVC.length < 3) {
+          throw new Error('CVC inválido. Deve conter pelo menos 3 dígitos.');
+        }
+      } else if (paymentMethod === 'pix') {
+        // Simulate Pix validation (e.g., QR code was "scanned")
+        console.log('Processando pagamento via Pix com QR code simbólico');
+      }
+
+      // Existing stock update logic
       for (const item of cart) {
         const currentProductResponse = await api.get(`/produtos/${item.id}`);
         const currentProduct = currentProductResponse.data;
@@ -115,9 +140,14 @@ const Compra = () => {
         console.log(`Produto ${item.id} atualizado com sucesso.`);
       }
 
-      alert('Pagamento realizado!');
+      alert(`Pagamento realizado com sucesso via ${paymentMethod === 'credit' ? 'Cartão de Crédito' : paymentMethod === 'debit' ? 'Cartão de Débito' : 'Pix'}!`);
       setCart([]);
       setShowPaymentModal(false);
+      setCardNumber('');
+      setCardName('');
+      setCardExpiry('');
+      setCardCVC('');
+      setPaymentMethod('credit');
       loadProducts();
     } catch (error) {
       console.error('Erro ao finalizar pagamento:', error);
@@ -222,6 +252,55 @@ const Compra = () => {
             {cart.map((item, index) => (
               <p key={index}>{item.nome} - {item.quantity} x R$ {item.preco.toFixed(2)}</p>
             ))}
+            <div className="payment-method">
+              <label>Método de Pagamento:</label>
+              <select
+                value={paymentMethod}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+                className="payment-select"
+              >
+                <option value="credit">Cartão de Crédito</option>
+                <option value="debit">Cartão de Débito</option>
+                <option value="pix">Pix</option>
+              </select>
+            </div>
+            {paymentMethod === 'credit' || paymentMethod === 'debit' ? (
+              <div className="card-details">
+                <input
+                  type="text"
+                  placeholder="Número do cartão (ex: 1234 5678 9012 3456)"
+                  value={cardNumber}
+                  onChange={(e) => setCardNumber(e.target.value)}
+                  className="card-input"
+                />
+                <input
+                  type="text"
+                  placeholder="Nome no cartão"
+                  value={cardName}
+                  onChange={(e) => setCardName(e.target.value)}
+                  className="card-input"
+                />
+                <input
+                  type="text"
+                  placeholder="Validade (MM/AA)"
+                  value={cardExpiry}
+                  onChange={(e) => setCardExpiry(e.target.value)}
+                  className="card-input"
+                />
+                <input
+                  type="text"
+                  placeholder="CVC"
+                  value={cardCVC}
+                  onChange={(e) => setCardCVC(e.target.value)}
+                  className="card-input"
+                />
+              </div>
+            ) : (
+              <div className="pix-details">
+                <p>Escaneie o QR Code abaixo para pagar via Pix:</p>
+                <div className="qr-code">QR CODE NAO FUNCIONA. ESPERE NOVAS ATUALIZACOES</div>
+              </div>
+            )}
             <button className="modal-btn" onClick={finalizePayment}>Finalizar Pagamento</button>
             <button className="modal-btn" onClick={() => setShowPaymentModal(false)}>Fechar</button>
           </div>
