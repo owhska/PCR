@@ -1,2 +1,12 @@
 node_modules/
 *.local
+# Firebase service account key (comum em servidores Node.js)
+serviceAccountKey.json
+firebaseKey.json
+server\firebaseKey.json
+# Arquivos de variáveis de ambiente
+.env
+.env.development
+.env.production
+# Outros arquivos de configuração sensíveis
+firebase.json
