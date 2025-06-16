@@ -80,6 +80,10 @@ const Compra = () => {
     setPurchaseQuantity(1);
   };
 
+  const removeFromCart = (index) => {
+    setCart(cart.filter((_, i) => i !== index));
+  };
+
   const clearCart = () => {
     setCart([]);
   };
@@ -140,7 +144,7 @@ const Compra = () => {
         console.log(`Produto ${item.id} atualizado com sucesso.`);
       }
 
-      alert(`Pagamento realizado com sucesso via ${paymentMethod === 'credit' ? 'Cartão de Crédito' : paymentMethod === 'debit' ? 'Cartão de Débito' : 'Pix'}!`);
+      alert(`Pagamento realizado com sucesso via ${paymentMethod === 'credit' ? 'Cartão de Crédito' : paymentMethod === 'debit' ? 'Cartão de Débito' : 'Pix'}! Venha buscar o produto na loja!`);
       setCart([]);
       setShowPaymentModal(false);
       setCardNumber('');
@@ -231,8 +235,9 @@ const Compra = () => {
             ) : (
               <>
                 {cart.map((item, index) => (
-                  <div key={index}>
+                  <div key={index} className="cart-item">
                     <p>{item.nome} - {item.quantity} x R$ {item.preco.toFixed(2)}</p>
+                    <button className="remove-btn" onClick={() => removeFromCart(index)}>Remover</button>
                   </div>
                 ))}
                 <button className="modal-btn" onClick={openPayment}>Ir para Pagamento</button>

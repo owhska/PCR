@@ -25,3 +25,5 @@ dist-ssr
 
 firebase.js
 firebaseConfig.js
+client\src\services\firebase.js
+client\src\services\firebaseConfig.js
