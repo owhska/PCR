@@ -15,6 +15,17 @@ Este projeto é um sistema completo para gerenciamento de uma loja de cosmético
   - CRUD completo de produtos (criar, editar, excluir e visualizar)
   - Gerenciamento de estoque
 
+
+---
+
+## ⚙️ Tecnologias Utilizadas
+
+- **Frontend:** React + Vite
+- **Estilização:** CSS e Bootstrap
+- **Backend:** Node.js
+- **Banco de dados:** Firebase Firestore
+- **Autenticação:** Firebase Auth
+
 ---
 
 ## 🧱 Estrutura do Projeto
@@ -85,16 +96,6 @@ produtos/
 
 ⚠️ **Esses arquivos são sensíveis e não devem ser commitados.**  
 Certifique-se de adicioná-los ao `.gitignore`.
-
----
-
-## ⚙️ Tecnologias Utilizadas
-
-- **Frontend:** React + Vite
-- **Estilização:** CSS e Bootstrap
-- **Backend:** Node.js (em `server/index.js`)
-- **Banco de dados:** Firebase Firestore
-- **Autenticação:** Firebase Auth
 
 ---
 
