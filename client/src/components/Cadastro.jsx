@@ -39,12 +39,9 @@ const Cadastro = () => {
       // Save user data to Firestore
       await setDoc(doc(db, "usuarios", user.uid), {
         email: email,
-        senha: senha, // Storing password (not recommended for production)
         cargo: "usuario",
         createdAt: new Date().toISOString(),
       });
-
-      // Navigate to compra page
       navigate("/compra");
     } catch (error) {
       console.error("Erro ao cadastrar:", error);
