@@ -144,5 +144,5 @@ app.put("/produtos/:id", async (req, res) => {
   }
 });
 app.listen(PORT, () => {
-  console.log(`🚀 API rodando em http://localhost:${PORT}`);
+  console.log(`🚀 API rodando em http://localhost:${PORT}/produtos`);
 });
