@@ -392,7 +392,7 @@ const Home = () => {
                 onChange={(e) => setTipo(e.target.value)}
                 required
               >
-                <option value="" disabled>Selecione o Tipo</option>
+                <option value="" disabled>Tipo</option>
                 <option value="Perfumes">Perfumes</option>
                 <option value="Cremes e Hidratantes">Cremes e Hidratantes</option>
                 <option value="Maquiagem">Maquiagem</option>
