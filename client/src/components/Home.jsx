@@ -81,9 +81,7 @@ const Home = () => {
     e.preventDefault();
 
     if (!nome || !preco || !quantidade || !tipo) {
-      alert(
-        "Preencha todos os campos obrigatórios (Nome, Preço, Quantidade, Tipo)!"
-      );
+      alert("Preencha todos os campos obrigatórios (Nome, Preço, Quantidade, Tipo)!");
       return;
     }
 
@@ -114,7 +112,7 @@ const Home = () => {
         quantidade: parsedQuantidade,
         situacao,
         tipo,
-        usuario: user.email, // Inclui o email do usuário autenticado
+        usuario: user.email,
       };
 
       console.log("Enviando produto:", produtoData);
@@ -166,7 +164,7 @@ const Home = () => {
 
       await setDoc(doc(db, "usuarios", user.uid), {
         email: adminEmail,
-        senha: adminSenha, // Nota: Armazenar senhas em texto puro não é recomendado
+        senha: adminSenha,
         cargo: "adm",
         createdAt: new Date().toISOString(),
       });
@@ -388,12 +386,19 @@ const Home = () => {
                 <option value="Habilitado">Habilitado</option>
                 <option value="Desabilitado">Desabilitado</option>
               </select>
-              <input
+              <select
                 className="form-control mb-2"
                 value={tipo}
                 onChange={(e) => setTipo(e.target.value)}
-                placeholder="Tipo"
-              />
+                required
+              >
+                <option value="" disabled>Selecione o Tipo</option>
+                <option value="Perfumes">Perfumes</option>
+                <option value="Cremes e Hidratantes">Cremes e Hidratantes</option>
+                <option value="Maquiagem">Maquiagem</option>
+                <option value="Produtos pra Cabelo">Produtos pra Cabelo</option>
+                <option value="Outros">Outros</option>
+              </select>
               <button className="btn btn-warning me-2" type="submit">
                 {editandoId ? "Atualizar" : "Salvar"}
               </button>

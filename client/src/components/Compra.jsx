@@ -13,7 +13,7 @@ const Compra = () => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [purchaseQuantity, setPurchaseQuantity] = useState(1);
   const [search, setSearch] = useState('');
-  const [showCompraModal, setShowCompraModal] = useState(false);
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false); // Estado
   const [showCartModal, setShowCartModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('credit');
@@ -46,7 +46,7 @@ const Compra = () => {
 
   const handleSearch = (e) => setSearch(e.target.value.toLowerCase());
 
-  const showPurchaseModal = async (id) => {
+  const handleShowPurchaseModal = async (id) => { // Renomeado de showPurchaseModal para handleShowPurchaseModal
     try {
       const response = await api.get(`/produtos/${id}`);
       if (response.data && response.data.erro) {
@@ -55,7 +55,7 @@ const Compra = () => {
       console.log('Produto selecionado:', response.data);
       setSelectedProduct(response.data);
       setPurchaseQuantity(1);
-      setShowCompraModal(true);
+      setShowPurchaseModal(true); // Usando o estado
     } catch (error) {
       console.error('Erro ao carregar produto:', error);
       alert(`Erro ao carregar produto: ${error.message}`);
@@ -76,7 +76,7 @@ const Compra = () => {
     }
 
     setCart([...cart, { ...selectedProduct, quantity }]);
-    setShowCompraModal(false);
+    setShowPurchaseModal(false); // Usando o estado
     setPurchaseQuantity(1);
   };
 
@@ -160,8 +160,43 @@ const Compra = () => {
   };
 
   const logout = () => {
-    signOut(auth);
-    navigate('/');
+    signOut(auth).then(() => {
+      navigate('/');
+    }).catch((error) => {
+      console.error('Erro ao fazer logout:', error);
+      alert('Erro ao fazer logout. Tente novamente.');
+    });
+  };
+
+  // Função para calcular o valor total do carrinho
+  const calculateTotal = () => {
+    return cart.reduce((total, item) => total + item.preco * item.quantity, 0).toFixed(2);
+  };
+
+
+  const productImages = {
+    Perfume: 'https://images.unsplash.com/photo-1541643600914-78b084683601?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
+    Perfumes: 'https://images.unsplash.com/photo-1514348871858-1d3c20902571?q=80&w=1074&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+    'Cremes e Hidratantes': 'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
+    Maquiagem: 'https://images.unsplash.com/photo-1512496015851-a90fb38ba796?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
+    'Produtos pra Cabelo': 'https://images.unsplash.com/photo-1601070846144-6be3aad73f7b?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cHJvZHV0b3MlMjBkZSUyMGNhYmVsb3xlbnwwfHwwfHx8MA%3D%3D', 
+    Outros: 'https://sqquimica.com/wp-content/uploads/2023/07/Tendencias-em-espessantes-para-cosmeticos.png',
+  };
+
+  
+  const getProductImage = (tipo) => {
+    if (!tipo) return productImages['Outros'];
+    const normalizedTipo = tipo.toLowerCase();
+    const typeMap = {
+      perfume: 'Perfume',
+      perfumes: 'Perfumes',
+      'cremes e hidratantes': 'Cremes e Hidratantes',
+      maquiagem: 'Maquiagem',
+      'produtos pra cabelo': 'Produtos pra Cabelo', // Novo mapeamento
+      outros: 'Outros',
+    };
+    const mappedType = typeMap[normalizedTipo] || 'Outros';
+    return productImages[mappedType] || productImages['Outros'];
   };
 
   return (
@@ -187,12 +222,12 @@ const Compra = () => {
           .filter(p => p.nome.toLowerCase().includes(search) && p.situacao !== 'Desabilitado')
           .map(p => (
             <div key={p.id} className="product-card">
-              <img src="https://sqquimica.com/wp-content/uploads/2023/07/Tendencias-em-espessantes-para-cosmeticos.png" className="product-img" alt={p.nome} />
+              <img src={getProductImage(p.tipo)} className="product-img" alt={p.nome} />
               <div className="product-info">
                 <h5>{p.nome}</h5>
                 <p>Preço: R$ {p.preco.toFixed(2)}</p>
                 <p>Estoque: {p.quantidade}</p>
-                <button className="buy-btn" onClick={() => showPurchaseModal(p.id)}>Comprar</button>
+                <button className="buy-btn" onClick={() => handleShowPurchaseModal(p.id)}>Comprar</button> {/* Atualizado para handleShowPurchaseModal */}
               </div>
             </div>
           ))}
@@ -203,7 +238,7 @@ const Compra = () => {
         <div className="cart-count">{cart.length}</div>
       </div>
 
-      {showCompraModal && selectedProduct && (
+      {showPurchaseModal && selectedProduct && ( // Usando o estado
         <div className="modal">
           <div className="modal-content">
             <h3>Comprar {selectedProduct.nome}</h3>
@@ -221,7 +256,7 @@ const Compra = () => {
               className="quantity-input"
             />
             <button className="modal-btn" onClick={addToCart}>Adicionar ao Carrinho</button>
-            <button className="modal-btn" onClick={() => setShowCompraModal(false)}>Fechar</button>
+            <button className="modal-btn" onClick={() => setShowPurchaseModal(false)}>Fechar</button> {/* Usando o estado */}
           </div>
         </div>
       )}
@@ -257,6 +292,7 @@ const Compra = () => {
             {cart.map((item, index) => (
               <p key={index}>{item.nome} - {item.quantity} x R$ {item.preco.toFixed(2)}</p>
             ))}
+            <p><strong>Valor Total: R$ {calculateTotal()}</strong></p>
             <div className="payment-method">
               <label>Método de Pagamento:</label>
               <select
