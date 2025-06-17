@@ -20,7 +20,7 @@ Este projeto é um sistema completo para gerenciamento de uma loja de cosmético
 
 ## ⚙️ Tecnologias Utilizadas
 
-- **Frontend:** React + Vite
+- **Frontend:** React
 - **Estilização:** CSS e Bootstrap
 - **Backend:** Node.js
 - **Banco de dados:** Firebase Firestore
